@@ -352,7 +352,7 @@ catalog_builtin_plugins()
     DECLAREPLUG_RO (cineon);
 #endif
 #if !defined(DISABLE_DDS)
-    DECLAREPLUG_RO (dds);
+    DECLAREPLUG (dds);
 #endif
 #if defined(USE_DCMTK) && !defined(DISABLE_DICOM)
     DECLAREPLUG_RO (dicom);

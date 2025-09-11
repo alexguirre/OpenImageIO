@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include <OpenImageIO/oiioversion.h>
+#include <OpenImageIO/string_view.h>
 
 // Some documentation for the DDS format:
 // https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
@@ -61,6 +65,11 @@ enum class Compression {
     BC6HS,
     BC7
 };
+
+string_view
+CompressionToString(Compression compression);
+Compression
+CompressionFromString(string_view str);
 
 /// DDS pixel format flags. Channel flags are only applicable for uncompressed
 /// images.

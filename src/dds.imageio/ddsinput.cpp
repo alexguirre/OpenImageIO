@@ -3,10 +3,10 @@
 // https://github.com/AcademySoftwareFoundation/OpenImageIO
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
-#include <stdint.h>
 
 #include <OpenImageIO/dassert.h>
 #include <OpenImageIO/filesystem.h>
@@ -597,6 +597,7 @@ DDSInput::open(const std::string& name, ImageSpec& newspec)
         m_Bpp = (m_dds.fmt.bpp + 7) >> 3;
         for (int i = 0; i < 4; ++i)
             calc_shifts(m_dds.fmt.masks[i], m_BitCounts[i], m_RightShifts[i]);
+
         m_nchans = 3;
         if (m_dds.fmt.flags & DDS_PF_LUMINANCE) {
             // we treat luminance as one channel;
@@ -791,21 +792,8 @@ DDSInput::seek_subimage(int subimage, int miplevel)
 
     // fill the imagespec
     if (m_compression != Compression::None) {
-        const char* str = nullptr;
-        switch (m_compression) {
-        case Compression::None: break;
-        case Compression::DXT1: str = "DXT1"; break;
-        case Compression::DXT2: str = "DXT2"; break;
-        case Compression::DXT3: str = "DXT3"; break;
-        case Compression::DXT4: str = "DXT4"; break;
-        case Compression::DXT5: str = "DXT5"; break;
-        case Compression::BC4: str = "BC4"; break;
-        case Compression::BC5: str = "BC5"; break;
-        case Compression::BC6HU: str = "BC6HU"; break;
-        case Compression::BC6HS: str = "BC6HS"; break;
-        case Compression::BC7: str = "BC7"; break;
-        }
-        if (str != nullptr)
+        string_view str = CompressionToString(m_compression);
+        if (!str.empty())
             m_spec.attribute("compression", str);
     }
 
@@ -896,6 +884,34 @@ DDSInput::seek_subimage(int subimage, int miplevel)
         m_spec.attribute("dds:CubeMapSides", sides);
     } else {
         m_spec.attribute("textureformat", "Plain Texture");
+    }
+
+    if (m_compression == Compression::None
+        && m_dds.fmt.fourCC != DDS_4CC_DX10) {
+        // Additional attributes for channel order and bit depths
+        for (int ch = 0; ch < m_spec.nchannels; ++ch) {
+            m_spec.attribute(Strutil::format("dds:BitCount{}",
+                                             m_spec.channel_name(ch)),
+                             m_BitCounts[ch]);
+
+            // TODO(DDS): this attribute is just for debugging, remove it
+            m_spec.attribute(Strutil::format("dds:RightShift{}",
+                                             m_spec.channel_name(ch)),
+                             m_RightShifts[ch]);
+        }
+
+
+        // TODO(DDS): should we re-order the channels directly in the m_spec instead?
+        uint32_t channels[4] = { 0, 1, 2, 3 };
+        std::sort(channels, channels + m_spec.nchannels,
+                  [this](uint32_t a, uint32_t b) {
+                      return m_RightShifts[a] > m_RightShifts[b];
+                  });
+        std::string channel_order = "";
+        for (int i = 0; i < m_spec.nchannels; ++i) {
+            channel_order += m_spec.channel_name(channels[i]);
+        }
+        m_spec.attribute("dds:ChannelOrder", channel_order);
     }
 
     m_subimage = subimage;

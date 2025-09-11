@@ -179,7 +179,9 @@ red & green channels).
      - DDS header data or explanation
    * - ``compression``
      - string
-     - Compression type
+     - Compression type. One of ``"DXT1"``, ``"DXT2"``, ``"DXT3"``,
+       ``"DXT4"``, ``"DXT5"``, ``"BC4"``, ``"BC5"``, ``"BC6HU"``,
+       ``"BC6HS"``, or ``"BC7"``.
    * - ``oiio:BitsPerSample``
      - int
      - bits per sample
@@ -191,6 +193,9 @@ red & green channels).
      - string
      - For environment maps, which cube faces are present (e.g., ``"+x -x
        +y -y"`` if *x* & *y* faces are present, but not *z*).
+   * - ``dds:BitCount<channel-name>``
+     - int
+     - channel-specific bits
 
 
 **Configuration settings for DDS input**

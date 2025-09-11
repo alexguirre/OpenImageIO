@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 # https://github.com/AcademySoftwareFoundation/OpenImageIO
 
-add_oiio_plugin (ddsinput.cpp)
+add_oiio_plugin (ddsinput.cpp ddsoutput.cpp dds_pvt.cpp)
