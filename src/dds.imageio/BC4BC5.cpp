@@ -1,4 +1,3 @@
-#if 0
 //-------------------------------------------------------------------------------------
 // BC4BC5.cpp
 //
@@ -10,7 +9,7 @@
 // http://go.microsoft.com/fwlink/?LinkId=248926
 //-------------------------------------------------------------------------------------
 
-#include "DirectXTexP.h"
+// #include "DirectXTexP.h"
 
 #include "BC.h"
 
@@ -33,8 +32,8 @@ namespace
     // Structures
     //-------------------------------------------------------------------------------------
 
-#pragma warning(push)
-#pragma warning(disable : 4201)
+// #pragma warning(push)
+// #pragma warning(disable : 4201)
 
     // BC4U/BC5U
     struct BC4_UNORM
@@ -151,7 +150,7 @@ namespace
         };
     };
 
-#pragma warning(pop)
+// #pragma warning(pop)
 
     //-------------------------------------------------------------------------------------
     // Convert a floating point value to an 8-bit SNORM
@@ -396,7 +395,7 @@ void DirectX::D3DXDecodeBC4U(XMVECTOR *pColor, const uint8_t *pBC) noexcept
 
     for (size_t i = 0; i < NUM_PIXELS_PER_BLOCK; ++i)
     {
-    #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
+    // #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
         pColor[i] = XMVectorSet(pBC4->R(i), 0, 0, 1.0f);
     }
 }
@@ -411,7 +410,7 @@ void DirectX::D3DXDecodeBC4S(XMVECTOR *pColor, const uint8_t *pBC) noexcept
 
     for (size_t i = 0; i < NUM_PIXELS_PER_BLOCK; ++i)
     {
-    #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
+    // #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
         pColor[i] = XMVectorSet(pBC4->R(i), 0, 0, 1.0f);
     }
 }
@@ -473,7 +472,7 @@ void DirectX::D3DXDecodeBC5U(XMVECTOR *pColor, const uint8_t *pBC) noexcept
 
     for (size_t i = 0; i < NUM_PIXELS_PER_BLOCK; ++i)
     {
-    #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
+    // #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
         pColor[i] = XMVectorSet(pBCR->R(i), pBCG->R(i), 0, 1.0f);
     }
 }
@@ -489,7 +488,7 @@ void DirectX::D3DXDecodeBC5S(XMVECTOR *pColor, const uint8_t *pBC) noexcept
 
     for (size_t i = 0; i < NUM_PIXELS_PER_BLOCK; ++i)
     {
-    #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
+    // #pragma prefast(suppress:22103, "writing blocks in two halves confuses tool")
         pColor[i] = XMVectorSet(pBCR->R(i), pBCG->R(i), 0, 1.0f);
     }
 }
@@ -561,4 +560,3 @@ void DirectX::D3DXEncodeBC5S(uint8_t *pBC, const XMVECTOR *pColor, uint32_t flag
     FindClosestSNORM(pBCR, theTexelsU);
     FindClosestSNORM(pBCG, theTexelsV);
 }
-#endif

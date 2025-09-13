@@ -21,10 +21,12 @@
 // Defines for SAL annotations
 #define _In_
 #define _Out_
+#define _Inout_
 #define _Out_writes_(n)
 #define _In_reads_(n)
 #define _Analysis_assume_(cond)
 #define _Use_decl_annotations_
+#define UNREFERENCED_PARAMETER(x) (void)x;
 
 namespace DirectX {
 //-------------------------------------------------------------------------------------

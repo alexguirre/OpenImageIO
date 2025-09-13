@@ -14,6 +14,9 @@ struct OIIO_SIMD4_ALIGN XMVECTOR {
     union {
         OIIO::simd::vfloat4 vf;
         OIIO::simd::vint4 vi;
+        struct {
+            float x, y, z, w;
+        };
     };
 };
 static_assert(std::is_trivially_copyable_v<XMVECTOR>);
@@ -81,6 +84,12 @@ XMStoreFloat4(XMFLOAT4* dest, const XMVECTOR& V) noexcept
     *dest = V;
 }
 
+inline void
+XMStoreFloat4A(XMFLOAT4A* dest, const XMVECTOR& V) noexcept
+{
+    *dest = V;
+}
+
 inline XMVECTOR
 XMVectorSet(float x, float y, float z, float w) noexcept
 {
@@ -93,6 +102,12 @@ XMVectorSetW(const XMVECTOR& V, float w) noexcept
     XMVECTOR r = V;
     r.vf.set_w(w);
     return r;
+}
+
+inline float
+XMVectorGetX(const XMVECTOR& V) noexcept
+{
+    return V.vf.x();
 }
 
 }  // namespace DirectX
