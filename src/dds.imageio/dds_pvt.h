@@ -8,6 +8,7 @@
 
 #include <OpenImageIO/oiioversion.h>
 #include <OpenImageIO/string_view.h>
+#include <OpenImageIO/typedesc.h>
 
 // Some documentation for the DDS format:
 // https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
@@ -17,6 +18,8 @@ OIIO_PLUGIN_NAMESPACE_BEGIN
 
 
 namespace DDS_pvt {
+
+constexpr int kBlockSize = 4;
 
 #define DDS_MAKE4CC(a, b, c, d) (a | b << 8 | c << 16 | d << 24)
 #define DDS_4CC_DXT1 DDS_MAKE4CC('D', 'X', 'T', '1')
@@ -162,6 +165,17 @@ typedef struct {
     uint32_t miscFlag2;
 } dds_header_dx10;
 
+TypeDesc::BASETYPE
+GetBaseType(Compression cmp);
+
+int
+GetChannelCount(Compression cmp, bool isNormal);
+
+size_t
+GetBlockCompressedSize(Compression cmp);
+
+size_t
+GetStorageRequirements(size_t width, size_t height, Compression cmp);
 
 }  // namespace DDS_pvt
 

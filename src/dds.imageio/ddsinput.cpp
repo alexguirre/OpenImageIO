@@ -23,8 +23,6 @@ OIIO_PLUGIN_NAMESPACE_BEGIN
 
 using namespace DDS_pvt;
 
-constexpr int kBlockSize = 4;
-
 // uncomment the following define to enable 3x2 cube map layout
 //#define DDS_3X2_CUBE_MAP_LAYOUT
 
@@ -106,42 +104,6 @@ private:
     static bool validate_signature(uint32_t signature);
 };
 
-static TypeDesc::BASETYPE
-GetBaseType(Compression cmp)
-{
-    if (cmp == Compression::BC6HU || cmp == Compression::BC6HS)
-        return TypeDesc::HALF;
-    return TypeDesc::UINT8;
-}
-
-static int
-GetChannelCount(Compression cmp, bool isNormal)
-{
-    if (cmp == Compression::DXT5)
-        return isNormal ? 3 : 4;
-    if (cmp == Compression::BC5)
-        return isNormal ? 3 : 2;
-    if (cmp == Compression::BC4)
-        return 1;
-    if (cmp == Compression::BC6HU || cmp == Compression::BC6HS)
-        return 3;
-    return 4;
-}
-
-static size_t
-GetBlockSize(Compression cmp)
-{
-    return cmp == Compression::DXT1 || cmp == Compression::BC4 ? 8 : 16;
-}
-
-static size_t
-GetStorageRequirements(size_t width, size_t height, Compression cmp)
-{
-    size_t blockCount = ((width + kBlockSize - 1) / kBlockSize)
-                        * ((height + kBlockSize - 1) / kBlockSize);
-    return blockCount * GetBlockSize(cmp);
-}
-
 static uint8_t
 ComputeNormalZ(uint8_t x, uint8_t y)
 {
@@ -191,7 +153,7 @@ static void
 DecompressImage(uint8_t* rgba, int width, int height, const uint8_t* blocks,
                 Compression cmp, const dds_pixformat& pixelFormat, int nthreads)
 {
-    const size_t blockSize = GetBlockSize(cmp);
+    const size_t bcSize = GetBlockCompressedSize(cmp);
     const int channelCount = GetChannelCount(cmp,
                                              pixelFormat.flags & DDS_PF_NORMAL);
 
@@ -202,16 +164,21 @@ DecompressImage(uint8_t* rgba, int width, int height, const uint8_t* blocks,
         0, heightInBlocks, 0,
         [&](int64_t ybb, int64_t ybe) {
             uint8_t rgbai[kBlockSize * kBlockSize * 4];
+            // float rgbaf[kBlockSize * kBlockSize * 4];
             uint16_t rgbh[kBlockSize * kBlockSize * 3];
             const int ybegin         = int(ybb) * kBlockSize;
             const int yend           = std::min(int(ybe) * kBlockSize, height);
-            const uint8_t* srcBlocks = blocks + ybb * widthInBlocks * blockSize;
+            const uint8_t* srcBlocks = blocks + ybb * widthInBlocks * bcSize;
             for (int y = ybegin; y < yend; y += kBlockSize) {
                 for (int x = 0; x < width; x += kBlockSize) {
                     // decompress the BCn block
                     switch (cmp) {
                     case Compression::DXT1:
                         bcdec_bc1(srcBlocks, rgbai, kBlockSize * 4);
+
+                        // DirectX::D3DXDecodeBC1(reinterpret_cast<DirectX::XMVECTOR*>(&rgbaf), srcBlocks);
+                        // std::cout << "I  " << (int)rgbai[0] << "  " << (int)rgbai[1] << "  " << (int)rgbai[2] << "  " << (int)rgbai[3] << std::endl;
+                        // std::cout << "F  " << rgbaf[0] << "  " << rgbaf[1] << "  " << rgbaf[2] << "  " << rgbaf[3] << std::endl;
                         break;
                     case Compression::DXT2:
                     case Compression::DXT3:
@@ -237,7 +204,7 @@ DecompressImage(uint8_t* rgba, int width, int height, const uint8_t* blocks,
                         break;
                     default: return;
                     }
-                    srcBlocks += blockSize;
+                    srcBlocks += bcSize;
 
                     // Swap R & A for RXGB format case
                     if (cmp == Compression::DXT5

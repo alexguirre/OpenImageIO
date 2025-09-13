@@ -53,6 +53,42 @@ CompressionFromString(string_view str)
     return Compression::None;
 }
 
+TypeDesc::BASETYPE
+GetBaseType(Compression cmp)
+{
+    if (cmp == Compression::BC6HU || cmp == Compression::BC6HS)
+        return TypeDesc::HALF;
+    return TypeDesc::UINT8;
+}
+
+int
+GetChannelCount(Compression cmp, bool isNormal)
+{
+    if (cmp == Compression::DXT5)
+        return isNormal ? 3 : 4;
+    if (cmp == Compression::BC5)
+        return isNormal ? 3 : 2;
+    if (cmp == Compression::BC4)
+        return 1;
+    if (cmp == Compression::BC6HU || cmp == Compression::BC6HS)
+        return 3;
+    return 4;
+}
+
+size_t
+GetBlockCompressedSize(Compression cmp)
+{
+    return cmp == Compression::DXT1 || cmp == Compression::BC4 ? 8 : 16;
+}
+
+size_t
+GetStorageRequirements(size_t width, size_t height, Compression cmp)
+{
+    size_t blockCount = ((width + kBlockSize - 1) / kBlockSize)
+                        * ((height + kBlockSize - 1) / kBlockSize);
+    return blockCount * GetBlockCompressedSize(cmp);
+}
+
 }  // namespace DDS_pvt
 
 
