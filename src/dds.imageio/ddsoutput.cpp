@@ -77,9 +77,7 @@ CompressImage(int width, int height, const float* rgbaf, Compression cmp,
     parallel_for_chunked(
         0, heightInBlocks, 0,
         [&](int64_t ybb, int64_t ybe) {
-            // uint8_t rgbai[kBlockSize * kBlockSize * 4];
-            float block_rgbaf[kBlockSize * kBlockSize * 4];
-            // uint16_t rgbh[kBlockSize * kBlockSize * 3];
+            DirectX::XMVECTOR block_rgbaf[kBlockSize * kBlockSize];
             const int ybegin   = int(ybb) * kBlockSize;
             const int yend     = std::min(int(ybe) * kBlockSize, height);
             uint8_t* dstBlocks = bc.data() + ybb * widthInBlocks * bcSize;
@@ -87,41 +85,42 @@ CompressImage(int width, int height, const float* rgbaf, Compression cmp,
                 for (int x = 0; x < width; x += kBlockSize) {
                     // Extract 4x4 block
                     memset(block_rgbaf, 0, sizeof(block_rgbaf));
-                    float* dst       = block_rgbaf;
-                    const float* src = rgbaf
+                    DirectX::XMVECTOR* dst = block_rgbaf;
+                    const float* src       = rgbaf
                                        + channelCount * (size_t(width) * y + x);
                     // TODO(DDS): when width/height is not multiple of 4, we need to finish filling block_rgbaf with colors from existing pixels
-                    for (int py = 0; py < kBlockSize && y + py < yend; py++) {
+                    for (int py = 0; py < kBlockSize && y + py < yend; ++py) {
                         int cols = std::min(kBlockSize, width - x);
-                        memcpy(dst, src, cols * channelCount * sizeof(float));
+                        if (cmp == Compression::BC4) {
+                            OIIO_ASSERT(channelCount == 1);
+                            for (int c = 0; c < cols; ++c) {
+                                dst[c].x = src[c];
+                            }
+                        } else {
+                            OIIO_ASSERT(channelCount == 4);
+                            memcpy(dst, src,
+                                   cols * channelCount * sizeof(float));
+                        }
                         src += channelCount * width;
-                        dst += kBlockSize * channelCount;
+                        dst += kBlockSize;
                     }
 
                     switch (cmp) {
                     case Compression::DXT1:
-                        DirectX::D3DXEncodeBC1(
-                            dstBlocks,
-                            reinterpret_cast<DirectX::XMVECTOR*>(&block_rgbaf),
-                            bc1_alpha_threshold, flags);
+                        DirectX::D3DXEncodeBC1(dstBlocks, block_rgbaf,
+                                               bc1_alpha_threshold, flags);
                         break;
                     case Compression::DXT2:
                     case Compression::DXT3:
-                        DirectX::D3DXEncodeBC2(
-                            dstBlocks,
-                            reinterpret_cast<DirectX::XMVECTOR*>(&block_rgbaf),
-                            flags);
+                        DirectX::D3DXEncodeBC2(dstBlocks, block_rgbaf, flags);
                         break;
                     case Compression::DXT4:
                     case Compression::DXT5:
-                        DirectX::D3DXEncodeBC3(
-                            dstBlocks,
-                            reinterpret_cast<DirectX::XMVECTOR*>(&block_rgbaf),
-                            flags);
+                        DirectX::D3DXEncodeBC3(dstBlocks, block_rgbaf, flags);
                         break;
-                    // case Compression::BC4:
-                    //     bcdec_bc4(srcBlocks, rgbai, kBlockSize);
-                    //     break;
+                    case Compression::BC4:
+                        DirectX::D3DXEncodeBC4U(dstBlocks, block_rgbaf, flags);
+                        break;
                     // case Compression::BC5:
                     //     bcdec_bc5(srcBlocks, rgbai, kBlockSize * 2);
                     //     break;
@@ -213,7 +212,6 @@ bool
 DDSOutput::open(const std::string& name, const ImageSpec& userspec,
                 OpenMode mode)
 {
-    std::cout << "dds open mode =" << mode << std::endl;
     // TODO(DDS): zend here should be larger for array images? do we support array images?
     if (!check_open(mode, userspec, { 0, 65535, 0, 65535, 0, 1, 0, 4 }))
         return false;
@@ -265,6 +263,7 @@ DDSOutput::open(const std::string& name, const ImageSpec& userspec,
         case Compression::DXT3: m_dds.fmt.fourCC = DDS_4CC_DXT3; break;
         case Compression::DXT4: m_dds.fmt.fourCC = DDS_4CC_DXT4; break;
         case Compression::DXT5: m_dds.fmt.fourCC = DDS_4CC_DXT5; break;
+        case Compression::BC4: m_dds.fmt.fourCC = DDS_4CC_BC4U; break;
         default: {
             errorfmt("Unsupported compression '{}'",
                      CompressionToString(m_compression));
@@ -477,8 +476,12 @@ DDSOutput::write_scanline(int y, int z, TypeDesc format, const void* data,
             || m_compression == Compression::DXT2
             || m_compression == Compression::DXT3
             || m_compression == Compression::DXT4
-            || m_compression == Compression::DXT5) {
-            size_t offset = y * m_dds.width * 4;
+            || m_compression == Compression::DXT5
+            || m_compression == Compression::BC4) {
+            // TODO(DDS): take into account isNormal?
+            size_t offset = y * m_dds.width
+                            * GetChannelCount(m_compression,
+                                              /*isNormal=*/false);
             if (m_spec.format == TypeDesc::UINT8) {
                 uint8_t* v               = (uint8_t*)data;
                 const imagesize_t nbytes = m_spec.scanline_bytes(true);
