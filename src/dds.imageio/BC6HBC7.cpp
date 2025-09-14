@@ -1,4 +1,3 @@
-#if 0
 //-------------------------------------------------------------------------------------
 // BC6HBC7.cpp
 //
@@ -8,9 +7,12 @@
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248926
+//
+//
+// Modified for use in OpenImageIO.
 //-------------------------------------------------------------------------------------
 
-#include "DirectXTexP.h"
+#include <cfloat>
 
 #include "BC.h"
 
@@ -671,8 +673,8 @@ namespace
         void Encode(_In_ bool bSigned, _In_reads_(NUM_PIXELS_PER_BLOCK) const HDRColorA* const pIn) noexcept;
 
     private:
-    #pragma warning(push)
-    #pragma warning(disable : 4480)
+    // #pragma warning(push)
+    // #pragma warning(disable : 4480)
         enum EField : uint8_t
         {
             NA, // N/A
@@ -691,7 +693,7 @@ namespace
             BY,
             BZ,
         };
-    #pragma warning(pop)
+    // #pragma warning(pop)
 
         struct ModeDescriptor
         {
@@ -708,8 +710,8 @@ namespace
             LDRColorA RGBAPrec[BC6H_MAX_REGIONS][2];
         };
 
-    #pragma warning(push)
-    #pragma warning(disable : 4512)
+    // #pragma warning(push)
+    // #pragma warning(disable : 4512)
         struct EncodeParams
         {
             float fBestErr;
@@ -729,7 +731,7 @@ namespace
                 }
             }
         };
-    #pragma warning(pop)
+    // #pragma warning(pop)
 
         static int Quantize(_In_ int iValue, _In_ int prec, _In_ bool bSigned) noexcept;
         static int Unquantize(_In_ int comp, _In_ uint8_t uBitsPerComp, _In_ bool bSigned) noexcept;
@@ -791,8 +793,8 @@ namespace
             LDRColorA RGBAPrecWithP;
         };
 
-    #pragma warning(push)
-    #pragma warning(disable : 4512)
+    // #pragma warning(push)
+    // #pragma warning(disable : 4512)
         struct EncodeParams
         {
             uint8_t uMode;
@@ -802,7 +804,7 @@ namespace
 
             EncodeParams(const HDRColorA* const aOriginal) noexcept : uMode(0), aEndPts{}, aLDRPixels{}, aHDRPixels(aOriginal) {}
         };
-    #pragma warning(pop)
+    // #pragma warning(pop)
 
         static uint8_t Quantize(_In_ uint8_t comp, _In_ uint8_t uPrec) noexcept
         {
@@ -2019,7 +2021,7 @@ void D3DX_BC6H::GeneratePaletteQuantized(const EncodeParams* pEP, const INTEndPn
         assert(false);
         for (size_t i = 0; i < uNumIndices; ++i)
         {
-        #pragma prefast(suppress:22102 22103, "writing blocks in two halves confuses tool")
+        // #pragma prefast(suppress:22102 22103, "writing blocks in two halves confuses tool")
             aPalette[i] = INTColor(0, 0, 0);
         }
         return;
@@ -2451,7 +2453,7 @@ void D3DX_BC6H::GeneratePaletteUnquantized(const EncodeParams* pEP, size_t uRegi
         assert(false);
         for (size_t i = 0; i < uNumIndices; ++i)
         {
-        #pragma prefast(suppress:22102 22103, "writing blocks in two halves confuses tool")
+        // #pragma prefast(suppress:22102 22103, "writing blocks in two halves confuses tool")
             aPalette[i] = INTColor(0, 0, 0);
         }
         return;
@@ -2694,12 +2696,12 @@ void D3DX_BC7::Decode(HDRColorA* pOut) const noexcept
 
         for (i = 0; i < uNumEndPts; i++)
         {
-        #ifdef __GNUC__
+        #if defined(__GNUC__) && !defined(__clang__)
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wstringop-overflow"
         #endif
             c[i] = Unquantize(c[i], RGBAPrecWithP);
-        #ifdef __GNUC_
+        #if defined(__GNUC__) && !defined(__clang__)
         #pragma GCC diagnostic pop
         #endif
         }
@@ -3422,13 +3424,13 @@ float D3DX_BC7::Refine(const EncodeParams* pEP, size_t uShape, size_t uRotation,
 
     for (size_t p = 0; p <= uPartitions; p++)
     {
-    #ifdef __GNUC__
+    #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wstringop-overflow"
     #endif
         aOrgEndPts[p].A = Quantize(aEndPts[p].A, ms_aInfo[pEP->uMode].RGBAPrecWithP);
         aOrgEndPts[p].B = Quantize(aEndPts[p].B, ms_aInfo[pEP->uMode].RGBAPrecWithP);
-    #ifdef __GNUC_
+    #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic pop
     #endif
     }
@@ -3658,4 +3660,3 @@ void DirectX::D3DXEncodeBC7(uint8_t *pBC, const XMVECTOR *pColor, uint32_t flags
     static_assert(sizeof(D3DX_BC7) == 16, "D3DX_BC7 should be 16 bytes");
     reinterpret_cast<D3DX_BC7*>(pBC)->Encode(flags, reinterpret_cast<const HDRColorA*>(pColor));
 }
-#endif

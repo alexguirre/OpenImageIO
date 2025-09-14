@@ -20,10 +20,14 @@
 
 // Defines for SAL annotations
 #define _In_
-#define _Out_
-#define _Inout_
-#define _Out_writes_(n)
 #define _In_reads_(n)
+#define _In_range_(lb, ub)
+#define _Out_
+#define _Out_writes_(n)
+#define _Out_writes_all_(n)
+#define _Out_opt_
+#define _Inout_
+#define _Inout_updates_all_(n)
 #define _Analysis_assume_(cond)
 #define _Use_decl_annotations_
 #define UNREFERENCED_PARAMETER(x) (void)x;
@@ -57,6 +61,8 @@ enum BC_FLAGS : uint32_t {
 
     BC_FLAGS_FORCE_BC7_MODE6 = 0x100000,
     // BC7 should only use mode 6; skip other modes
+
+    TEX_COMPRESS_BC7_QUICK = BC_FLAGS_FORCE_BC7_MODE6,
 };
 
 //-------------------------------------------------------------------------------------
