@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include <OpenImageIO/fmath.h>
 #include <OpenImageIO/simd.h>
 
 namespace DirectX {
@@ -58,7 +59,7 @@ XMVectorZero() noexcept
 inline XMVECTOR
 XMVectorLerp(const XMVECTOR& a, const XMVECTOR& b, float t) noexcept
 {
-    return { a.vf * (1 - t) + b.vf * t };
+    return { OIIO::lerp(a.vf, b.vf, t) };
 }
 
 inline XMVECTOR

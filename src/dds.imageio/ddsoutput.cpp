@@ -96,6 +96,12 @@ CompressImage(int width, int height, const float* rgbaf, Compression cmp,
                             for (int c = 0; c < cols; ++c) {
                                 dst[c].x = src[c];
                             }
+                        } else if (cmp == Compression::BC5) {
+                            OIIO_ASSERT(channelCount == 2);
+                            for (int c = 0; c < cols; ++c) {
+                                dst[c].x = src[c * 2 + 0];
+                                dst[c].y = src[c * 2 + 1];
+                            }
                         } else {
                             OIIO_ASSERT(channelCount == 4);
                             memcpy(dst, src,
@@ -120,6 +126,9 @@ CompressImage(int width, int height, const float* rgbaf, Compression cmp,
                         break;
                     case Compression::BC4:
                         DirectX::D3DXEncodeBC4U(dstBlocks, block_rgbaf, flags);
+                        break;
+                    case Compression::BC5:
+                        DirectX::D3DXEncodeBC5U(dstBlocks, block_rgbaf, flags);
                         break;
                     // case Compression::BC5:
                     //     bcdec_bc5(srcBlocks, rgbai, kBlockSize * 2);
@@ -264,6 +273,7 @@ DDSOutput::open(const std::string& name, const ImageSpec& userspec,
         case Compression::DXT4: m_dds.fmt.fourCC = DDS_4CC_DXT4; break;
         case Compression::DXT5: m_dds.fmt.fourCC = DDS_4CC_DXT5; break;
         case Compression::BC4: m_dds.fmt.fourCC = DDS_4CC_BC4U; break;
+        case Compression::BC5: m_dds.fmt.fourCC = DDS_4CC_BC5U; break;
         default: {
             errorfmt("Unsupported compression '{}'",
                      CompressionToString(m_compression));
@@ -477,7 +487,8 @@ DDSOutput::write_scanline(int y, int z, TypeDesc format, const void* data,
             || m_compression == Compression::DXT3
             || m_compression == Compression::DXT4
             || m_compression == Compression::DXT5
-            || m_compression == Compression::BC4) {
+            || m_compression == Compression::BC4
+            || m_compression == Compression::BC5) {
             // TODO(DDS): take into account isNormal?
             size_t offset = y * m_dds.width
                             * GetChannelCount(m_compression,
